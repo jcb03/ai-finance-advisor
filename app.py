@@ -28,6 +28,8 @@ from services.notification_service import NotificationService
 from database.models import Transaction, Budget, FinancialGoal, User
 from config.settings import Settings
 
+
+
 # Page configuration
 st.set_page_config(
     page_title="AI Personal Finance Advisor",
