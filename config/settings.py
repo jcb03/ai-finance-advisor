@@ -1,56 +1,54 @@
-"""settings.py - Configuration settings"""
+# config/settings.py
 
-import os
 from typing import Dict, Any
 
 class Settings:
     """Application settings and configuration"""
 
     @staticmethod
-    def get_database_config():
+    def get_database_config() -> Dict[str, Any]:
         import streamlit as st
         return {
-            'host': st.secrets.get("postgresql", {}).get("host", "localhost"),
-            'port': st.secrets.get("postgresql", {}).get("port", 5432),
-            'database': st.secrets.get("postgresql", {}).get("database", "finance_advisor"),
-            'username': st.secrets.get("postgresql", {}).get("username", "postgres"),
-            'password': st.secrets.get("postgresql", {}).get("password", "password")
+            'host': st.secrets["postgresql"]["host"],
+            'port': st.secrets["postgresql"]["port"],
+            'database': st.secrets["postgresql"]["database"],
+            'username': st.secrets["postgresql"]["username"],
+            'password': st.secrets["postgresql"]["password"]
         }
 
     @staticmethod
-    def get_openai_api_key():
+    def get_openai_api_key() -> str:
         import streamlit as st
-        return st.secrets.get("openai", {}).get("api_key", "")
+        return st.secrets["openai"]["api_key"]
 
     @staticmethod
-    def get_alpha_vantage_api_key():
+    def get_alpha_vantage_api_key() -> str:
         import streamlit as st
-        return st.secrets.get("alpha_vantage", {}).get("api_key", "")
+        return st.secrets["alpha_vantage"]["api_key"]
 
     @staticmethod
-    def get_twilio_settings():
+    def get_twilio_settings() -> Dict[str, str]:
         import streamlit as st
         return {
-            'account_sid': st.secrets.get("twilio", {}).get("account_sid", ""),
-            'auth_token': st.secrets.get("twilio", {}).get("auth_token", ""),
-            'phone_number': st.secrets.get("twilio", {}).get("phone_number", "")
+            'account_sid': st.secrets["twilio"]["account_sid"],
+            'auth_token': st.secrets["twilio"]["auth_token"],
+            'phone_number': st.secrets["twilio"]["phone_number"]
         }
 
     @staticmethod
-    def get_email_settings():
+    def get_email_settings() -> Dict[str, Any]:
         import streamlit as st
         return {
-            'smtp_server': st.secrets.get("email", {}).get("smtp_server", ""),
-            'smtp_port': st.secrets.get("email", {}).get("smtp_port", 587),
-            'address': st.secrets.get("email", {}).get("address", ""),
-            'password': st.secrets.get("email", {}).get("password", "")
+            'smtp_server': st.secrets["email"]["smtp_server"],
+            'smtp_port': st.secrets["email"]["smtp_port"],
+            'address': st.secrets["email"]["address"],
+            'password': st.secrets["email"]["password"]
         }
 
     # Application settings
     APP_NAME = "AI-Powered Personal Finance Advisor"
     APP_VERSION = "1.0.0"
 
-    # Transaction categories
     TRANSACTION_CATEGORIES = [
         "Groceries", "Housing", "Transportation", "Entertainment",
         "Healthcare", "Shopping", "Utilities", "Restaurants",
@@ -58,10 +56,7 @@ class Settings:
         "Subscriptions", "Income", "Other"
     ]
 
-    # Investment risk levels
     RISK_LEVELS = ["Conservative", "Moderate", "Aggressive"]
-
-    # Time horizons
     TIME_HORIZONS = ["< 1 year", "1-3 years", "3-5 years", "5+ years"]
 
     @classmethod
