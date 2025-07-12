@@ -250,12 +250,7 @@ def show_register_form():
 
 def show_auth_page():
     """Display authentication page"""
-    st.set_page_config(
-        page_title="Finance Advisor - Login",
-        page_icon="🏦",
-        layout="centered"
-    )
-    
+
     # Header
     st.title("🏦 AI-Powered Personal Finance Advisor")
     st.markdown("---")

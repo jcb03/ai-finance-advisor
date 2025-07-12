@@ -1,6 +1,13 @@
 """Main Streamlit application"""
-
 import streamlit as st
+# Page configuration
+st.set_page_config(
+    page_title="AI Personal Finance Advisor",
+    page_icon="🏦",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -11,6 +18,7 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 # Import custom modules
 from auth.authentication import AuthenticationManager, show_auth_page
@@ -28,15 +36,6 @@ from services.notification_service import NotificationService
 from database.models import Transaction, Budget, FinancialGoal, User
 from config.settings import Settings
 
-
-
-# Page configuration
-st.set_page_config(
-    page_title="AI Personal Finance Advisor",
-    page_icon="🏦",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize services
 @st.cache_resource
