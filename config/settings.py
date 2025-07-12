@@ -1,6 +1,6 @@
 # config/settings.py
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 class Settings:
     """Application settings and configuration"""
@@ -8,41 +8,44 @@ class Settings:
     @staticmethod
     def get_database_config() -> Dict[str, Any]:
         import streamlit as st
+        db = st.secrets.get("postgresql", {})
         return {
-            'host': st.secrets["postgresql"]["host"],
-            'port': st.secrets["postgresql"]["port"],
-            'database': st.secrets["postgresql"]["database"],
-            'username': st.secrets["postgresql"]["username"],
-            'password': st.secrets["postgresql"]["password"]
+            'host': db.get("host", "localhost"),
+            'port': db.get("port", 5432),
+            'database': db.get("database", "finance_advisor"),
+            'username': db.get("username", "finance_user"),
+            'password': db.get("password", "")
         }
 
     @staticmethod
-    def get_openai_api_key() -> str:
+    def get_openai_api_key() -> Optional[str]:
         import streamlit as st
-        return st.secrets["openai"]["api_key"]
+        return st.secrets.get("openai", {}).get("api_key", "")
 
     @staticmethod
-    def get_alpha_vantage_api_key() -> str:
+    def get_alpha_vantage_api_key() -> Optional[str]:
         import streamlit as st
-        return st.secrets["alpha_vantage"]["api_key"]
+        return st.secrets.get("alpha_vantage", {}).get("api_key", "")
 
     @staticmethod
     def get_twilio_settings() -> Dict[str, str]:
         import streamlit as st
+        twilio = st.secrets.get("twilio", {})
         return {
-            'account_sid': st.secrets["twilio"]["account_sid"],
-            'auth_token': st.secrets["twilio"]["auth_token"],
-            'phone_number': st.secrets["twilio"]["phone_number"]
+            'account_sid': twilio.get("account_sid", ""),
+            'auth_token': twilio.get("auth_token", ""),
+            'phone_number': twilio.get("phone_number", "")
         }
 
     @staticmethod
     def get_email_settings() -> Dict[str, Any]:
         import streamlit as st
+        email = st.secrets.get("email", {})
         return {
-            'smtp_server': st.secrets["email"]["smtp_server"],
-            'smtp_port': st.secrets["email"]["smtp_port"],
-            'address': st.secrets["email"]["address"],
-            'password': st.secrets["email"]["password"]
+            'smtp_server': email.get("smtp_server", ""),
+            'smtp_port': email.get("smtp_port", 587),
+            'address': email.get("address", ""),
+            'password': email.get("password", "")
         }
 
     # Application settings
@@ -67,9 +70,9 @@ class Settings:
         twilio = cls.get_twilio_settings()
         email = cls.get_email_settings()
         return {
-            'database': bool(db['host'] and db['database']),
+            'database': bool(db['host'] and db['database'] and db['username']),
             'openai': bool(openai),
             'alpha_vantage': bool(alpha),
-            'twilio': bool(twilio['account_sid'] and twilio['auth_token']),
-            'email': bool(email['smtp_server'] and email['address'])
+            'twilio': bool(twilio['account_sid'] and twilio['auth_token'] and twilio['phone_number']),
+            'email': bool(email['smtp_server'] and email['address'] and email['password'])
         }
