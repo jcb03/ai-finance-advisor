@@ -1,7 +1,5 @@
 """notification_service.py - Notifications"""
 
-"""Notifications"""
-
 import streamlit as st
 from twilio.rest import Client
 import smtplib
@@ -19,15 +17,17 @@ class NotificationService:
     
     def __init__(self):
         # Twilio configuration
-        self.twilio_account_sid = Settings.TWILIO_ACCOUNT_SID
-        self.twilio_auth_token = Settings.TWILIO_AUTH_TOKEN
-        self.twilio_phone_number = Settings.TWILIO_PHONE_NUMBER
+        twilio_config = Settings.twilio_config()
+        self.twilio_account_sid = twilio_config['account_sid']
+        self.twilio_auth_token = twilio_config['auth_token']
+        self.twilio_phone_number = twilio_config['phone_number']
         
         # Email configuration
-        self.smtp_server = Settings.EMAIL_SMTP_SERVER
-        self.smtp_port = Settings.EMAIL_SMTP_PORT
-        self.email_address = Settings.EMAIL_ADDRESS
-        self.email_password = Settings.EMAIL_PASSWORD
+        email_config = Settings.email_config()
+        self.smtp_server = email_config['smtp_server']
+        self.smtp_port = email_config['smtp_port']
+        self.email_address = email_config['address']
+        self.email_password = email_config['password']
         
         # Initialize Twilio client
         if self.twilio_account_sid and self.twilio_auth_token:

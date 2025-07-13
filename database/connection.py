@@ -1,7 +1,5 @@
 """connection.py - Database connection"""
 
-"""Database connection"""
-
 import psycopg2
 import streamlit as st
 from psycopg2.extras import RealDictCursor
@@ -25,12 +23,15 @@ class DatabaseConnection:
         """Get database connection"""
         if self._connection is None or self._connection.closed:
             try:
+                # Get database config using the new method
+                db_config = Settings.database_config()
+                
                 self._connection = psycopg2.connect(
-                    host=Settings.DATABASE_CONFIG['host'],
-                    port=Settings.DATABASE_CONFIG['port'],
-                    database=Settings.DATABASE_CONFIG['database'],
-                    user=Settings.DATABASE_CONFIG['username'],
-                    password=Settings.DATABASE_CONFIG['password'],
+                    host=db_config['host'],
+                    port=db_config['port'],
+                    database=db_config['database'],
+                    user=db_config['username'],
+                    password=db_config['password'],
                     cursor_factory=RealDictCursor
                 )
                 logger.info("Database connection established")

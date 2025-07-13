@@ -16,8 +16,8 @@ class TransactionCategorizer:
     """Handles AI-powered transaction categorization"""
     
     def __init__(self):
-        self.client = OpenAI(api_key=Settings.OPENAI_API_KEY)
-        self.categories = Settings.TRANSACTION_CATEGORIES
+        self.client = OpenAI(api_key=Settings.openai_api_key())  # Use method
+        self.categories = Settings.TRANSACTION_CATEGORIES 
     
     def categorize_transaction(self, description: str, amount: float) -> Dict:
         """Categorize a single transaction using GPT-4"""

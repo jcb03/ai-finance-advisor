@@ -1,7 +1,5 @@
 """investment_service.py - Investment recommendations"""
 
-"""Investment recommendations"""
-
 import streamlit as st
 import requests
 from openai import OpenAI
@@ -17,8 +15,8 @@ class InvestmentService:
     """Handles investment recommendations and market data"""
     
     def __init__(self):
-        self.client = OpenAI(api_key=Settings.OPENAI_API_KEY)
-        self.alpha_vantage_key = Settings.ALPHA_VANTAGE_API_KEY
+        self.client = OpenAI(api_key=Settings.openai_api_key())
+        self.alpha_vantage_key = Settings.alpha_vantage_api_key()
         
         # Investment categories
         self.investment_types = {

@@ -1,7 +1,5 @@
 """ai_advisor.py - AI-powered insights and recommendations"""
 
-"""AI-powered insights and recommendations"""
-
 import streamlit as st
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
@@ -20,11 +18,11 @@ class AIFinancialAdvisor:
     """AI-powered financial advisor for insights and recommendations"""
     
     def __init__(self):
-        self.client = OpenAI(api_key=Settings.OPENAI_API_KEY)
+        self.client = OpenAI(api_key=Settings.openai_api_key())
         self.llm = ChatOpenAI(
             model="gpt-4",
             temperature=0.1,
-            api_key=Settings.OPENAI_API_KEY
+            api_key=Settings.openai_api_key()  # ✅ Fixed: Use method instead of attribute
         )
     
     def analyze_spending_patterns(self, user_id: int, months: int = 3) -> Dict[str, Any]:
