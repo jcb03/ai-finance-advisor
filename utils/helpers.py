@@ -403,3 +403,58 @@ def create_warning_box(title: str, content: str, icon: str = "⚠️"):
 def create_error_box(title: str, content: str, icon: str = "❌"):
     """Create an error box"""
     st.error(f"{icon} **{title}**\n\n{content}")
+
+def create_footer():
+    """Create a footer using Streamlit components"""
+    import streamlit as st
+    
+    # Add spacing
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Create footer container
+    with st.container():
+        st.markdown("---")
+        
+        # Title
+        st.markdown("### 🔗 Connect with the Developer")
+        
+        # Social links in columns
+        col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
+        
+        with col2:
+            st.markdown("""
+            <a href="https://www.linkedin.com/in/jai-chaudhary-54bb86221/" target="_blank" style="text-decoration: none;">
+                <div style="text-align: center; padding: 10px; background: #0077B5; color: white; border-radius: 10px; margin: 5px;">
+                    <strong>🔗 LinkedIn</strong>
+                </div>
+            </a>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("""
+            <a href="https://github.com/jcb03" target="_blank" style="text-decoration: none;">
+                <div style="text-align: center; padding: 10px; background: #333; color: white; border-radius: 10px; margin: 5px;">
+                    <strong>💻 GitHub</strong>
+                </div>
+            </a>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown("""
+            <a href="https://learn.microsoft.com/en-us/users/jaichaudhary-6371/" target="_blank" style="text-decoration: none;">
+                <div style="text-align: center; padding: 10px; background: #00BCF2; color: white; border-radius: 10px; margin: 5px;">
+                    <strong>📚 Microsoft Learn</strong>
+                </div>
+            </a>
+            """, unsafe_allow_html=True)
+        
+        # Attribution
+        st.markdown("---")
+        st.markdown(
+            "<div style='text-align: center; color: #666; font-size: 14px;'>"
+            "<p><strong>Made with ❤️ by Jai Chaudhary</strong></p>"
+            "<p style='font-size: 12px;'>AI-Powered Personal Finance Advisor © 2025</p>"
+            "</div>",
+            unsafe_allow_html=True
+        )
+

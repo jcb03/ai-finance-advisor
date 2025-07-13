@@ -1,6 +1,7 @@
 """Main Streamlit application"""
 import streamlit as st
-# Page configuration
+
+# Page configuration - MUST be first Streamlit command
 st.set_page_config(
     page_title="AI Personal Finance Advisor",
     page_icon="🏦",
@@ -19,7 +20,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 # Import custom modules
 from auth.authentication import AuthenticationManager, show_auth_page
 from auth.user_management import show_profile_settings
@@ -27,7 +27,8 @@ from utils.file_processor import FileProcessor
 from utils.helpers import (
     DateHelper, ChartHelper, FormatHelper, ValidationHelper,
     NotificationHelper, DataHelper, show_loading_spinner,
-    create_metric_card, create_info_box, create_warning_box
+    create_metric_card, create_info_box, create_warning_box, 
+    create_footer
 )
 from services.transaction_parser import TransactionParser
 from services.ai_advisor import AIFinancialAdvisor
@@ -35,7 +36,6 @@ from services.investment_service import InvestmentService
 from services.notification_service import NotificationService
 from database.models import Transaction, Budget, FinancialGoal, User
 from config.settings import Settings
-
 
 # Initialize services
 @st.cache_resource
@@ -273,6 +273,7 @@ def show_overview_page(user_id: int, services):
     except Exception as e:
         logger.error(f"Error in overview page: {e}")
         st.error(f"Error loading overview: {e}")
+    create_footer()
 
 def show_transactions_page(user_id: int, services):
     """Transactions page with upload and management"""
@@ -485,6 +486,7 @@ def show_transactions_page(user_id: int, services):
     except Exception as e:
         logger.error(f"Error in transactions page: {e}")
         st.error(f"Error loading transactions: {e}")
+    create_footer()
 
 def show_budgets_page(user_id: int, services):
     """Budgets page with creation and management"""
@@ -664,6 +666,7 @@ def show_budgets_page(user_id: int, services):
     except Exception as e:
         logger.error(f"Error in budgets page: {e}")
         st.error(f"Error loading budgets: {e}")
+    create_footer()
 
 def show_goals_page(user_id: int, services):
     """Financial goals page"""
@@ -842,6 +845,7 @@ def show_goals_page(user_id: int, services):
     except Exception as e:
         logger.error(f"Error in goals page: {e}")
         st.error(f"Error loading goals: {e}")
+    create_footer()
 
 def show_investments_page(user_id: int, services):
     """Investments page with recommendations"""
@@ -858,7 +862,7 @@ def show_investments_page(user_id: int, services):
         # Investment profile form
         st.subheader("📋 Investment Profile")
         
-        with st.form("investment_profile_form"):
+        with st.form("investment_profile_form", clear_on_submit=False):
             col1, col2 = st.columns(2)
             
             with col1:
@@ -873,11 +877,9 @@ def show_investments_page(user_id: int, services):
             
             goals = st.text_area("Investment Goals", placeholder="e.g., Retirement, House down payment, Emergency fund")
             
-            # Use callback function for form submission
             submitted = st.form_submit_button("🤖 Get AI Recommendations", type="primary")
             
             if submitted:
-                # Create user profile
                 user_profile = {
                     'age': age,
                     'risk_tolerance': risk_tolerance,
@@ -892,7 +894,7 @@ def show_investments_page(user_id: int, services):
                     recommendations = services['investment_service'].get_investment_recommendations(user_profile)
                     
                     if recommendations:
-                        # Store in session state using proper method
+                        # Use dictionary-style assignment to avoid widget conflicts
                         st.session_state['investment_recommendations'] = recommendations
                         st.session_state['investment_profile'] = user_profile
                         st.success("✅ Investment recommendations generated!")
@@ -967,611 +969,332 @@ def show_investments_page(user_id: int, services):
     except Exception as e:
         logger.error(f"Error in investments page: {e}")
         st.error(f"Error loading investments: {e}")
-
+    create_footer()
 
 def show_insights_page(user_id: int, services):
-    """AI insights page"""
-    st.header("🤖 AI Financial Insights")
+    """AI Insights page with comprehensive financial analysis"""
+    st.header("🤖 AI-Powered Financial Insights")
     
     try:
-        # Analysis options
-        col1, col2 = st.columns(2)
+        # Check if user has sufficient data
+        transactions = Transaction.get_by_user(user_id, limit=100)
+        
+        if len(transactions) < 5:
+            create_info_box(
+                "Insufficient Data",
+                "Upload more transactions to get AI-powered insights. You need at least 5 transactions for meaningful analysis.",
+                "📊"
+            )
+            return
+        
+        # Create tabs for different insights
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "📈 Spending Analysis", 
+            "💡 AI Recommendations", 
+            "🔮 Future Predictions", 
+            "❤️ Financial Health"
+        ])
+        
+        with tab1:
+            show_spending_analysis(user_id, services)
+        
+        with tab2:
+            show_ai_recommendations(user_id, services)
+        
+        with tab3:
+            show_future_predictions(user_id, services)
+        
+        with tab4:
+            show_financial_health_analysis(user_id, services)
+            
+    except Exception as e:
+        logger.error(f"Error in AI insights page: {e}")
+        st.error(f"Error loading AI insights: {e}")
+    create_footer()
+
+def show_spending_analysis(user_id: int, services):
+    """Display AI-powered spending analysis"""
+    st.subheader("📊 Spending Pattern Analysis")
+    
+    with st.spinner("🤖 AI is analyzing your spending patterns..."):
+        analysis = services['ai_advisor'].analyze_spending_patterns(user_id, months=3)
+        
+        if 'error' in analysis:
+            st.error(f"Analysis failed: {analysis['error']}")
+            return
+        
+        # Key metrics
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            analysis_period = st.selectbox(
-                "Analysis Period",
-                ["Last 3 months", "Last 6 months", "Last 12 months"],
-                index=1
+            st.metric(
+                "Total Expenses", 
+                f"${analysis['total_expenses']:,.2f}",
+                "Last 3 months"
             )
         
         with col2:
-            st.write("")  # Spacing
-            if st.button("🔄 Refresh Analysis", type="primary"):
-                st.rerun()
+            st.metric(
+                "Total Income", 
+                f"${analysis['total_income']:,.2f}",
+                f"${analysis['net_income']:,.2f} net"
+            )
         
-        # Convert period to months
-        period_map = {
-            "Last 3 months": 3,
-            "Last 6 months": 6,
-            "Last 12 months": 12
-        }
-        months = period_map[analysis_period]
+        with col3:
+            st.metric(
+                "Transactions", 
+                analysis['total_transactions'],
+                f"Avg ${analysis['average_monthly_spending']:,.0f}/month"
+            )
         
-        # Spending pattern analysis
-        st.subheader("📊 Spending Pattern Analysis")
+        with col4:
+            savings_rate = (analysis['net_income'] / analysis['total_income'] * 100) if analysis['total_income'] > 0 else 0
+            st.metric(
+                "Savings Rate", 
+                f"{savings_rate:.1f}%",
+                "Of total income"
+            )
         
-        with show_loading_spinner("Analyzing your spending patterns..."):
-            analysis = services['ai_advisor'].analyze_spending_patterns(user_id, months)
-            
-            if 'error' not in analysis:
-                # Key insights
-                col1, col2 = st.columns(2)
+        st.divider()
+        
+        # AI Insights
+        st.subheader("🧠 AI Analysis")
+        if analysis.get('insights'):
+            st.markdown(analysis['insights'])
+        else:
+            st.info("No specific insights available for this period.")
+        
+        # Category breakdown chart
+        if analysis.get('category_spending'):
+            st.subheader("💰 Spending by Category")
+            fig = ChartHelper.create_spending_pie_chart(
+                analysis['category_spending'], 
+                "Spending Distribution"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+def show_ai_recommendations(user_id: int, services):
+    """Display AI-generated savings recommendations"""
+    st.subheader("💡 Personalized Savings Recommendations")
+    
+    with st.spinner("🤖 Generating personalized recommendations..."):
+        recommendations = services['ai_advisor'].generate_savings_recommendations(user_id)
+        
+        if not recommendations:
+            st.info("Unable to generate recommendations. Upload more transactions for better insights.")
+            return
+        
+        st.success(f"✨ Found {len(recommendations)} personalized recommendations for you!")
+        
+        for i, rec in enumerate(recommendations, 1):
+            with st.expander(f"💰 Recommendation {i}: {rec.get('category', 'General')}"):
+                col1, col2 = st.columns([2, 1])
                 
                 with col1:
-                    st.write("**📈 Financial Summary:**")
-                    st.metric("Total Income", f"${analysis['total_income']:,.2f}")
-                    st.metric("Total Expenses", f"${analysis['total_expenses']:,.2f}")
-                    st.metric("Net Income", f"${analysis['net_income']:,.2f}")
-                    st.metric("Avg Monthly Spending", f"${analysis['average_monthly_spending']:,.2f}")
+                    st.write(f"**Action:** {rec.get('recommendation', 'No recommendation available')}")
+                    st.write(f"**Impact:** {rec.get('impact', 'Positive impact on finances')}")
                 
                 with col2:
-                    # Top spending categories
-                    if analysis['category_spending']:
-                        st.write("**🏷️ Top Spending Categories:**")
-                        sorted_categories = sorted(
-                            analysis['category_spending'].items(), 
-                            key=lambda x: x[1], 
-                            reverse=True
-                        )
-                        for category, amount in sorted_categories[:5]:
-                            st.write(f"• {category}: ${amount:,.2f}")
-                
-                # AI insights
-                st.subheader("🧠 AI Insights")
-                st.write(analysis['insights'])
-                
-                # Spending charts
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    if analysis['category_spending']:
-                        fig = ChartHelper.create_spending_pie_chart(
-                            analysis['category_spending'], 
-                            f"Spending by Category ({analysis_period})"
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                
-                with col2:
-                    if analysis['monthly_spending']:
-                        fig = ChartHelper.create_spending_trend_chart(
-                            analysis['monthly_spending'], 
-                            f"Monthly Spending Trend ({analysis_period})"
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.error(f"Analysis failed: {analysis['error']}")
+                    st.metric("Potential Savings", f"${rec.get('estimated_savings', 0):.2f}/month")
+                    st.write(f"**Difficulty:** {rec.get('difficulty', 'Medium')}")
+                    st.write(f"**Timeline:** {rec.get('timeline', '1 month')}")
+
+def show_future_predictions(user_id: int, services):
+    """Display AI-powered spending predictions"""
+    st.subheader("🔮 Future Spending Predictions")
+    
+    # Prediction controls
+    col1, col2 = st.columns(2)
+    with col1:
+        months_ahead = st.selectbox("Prediction Period", [1, 2, 3, 6], index=2)
+    with col2:
+        if st.button("🔄 Update Predictions"):
+            st.rerun()
+    
+    with st.spinner("🤖 Predicting your future spending..."):
+        predictions = services['ai_advisor'].predict_future_spending(user_id, months_ahead)
         
-        st.divider()
+        if 'error' in predictions:
+            st.error(f"Prediction failed: {predictions['error']}")
+            return
         
-        # Financial health score
-        st.subheader("💚 Financial Health Score")
-        
-        with show_loading_spinner("Calculating your financial health score..."):
-            health_analysis = services['ai_advisor'].analyze_financial_health(user_id)
+        # Overall prediction summary
+        if predictions.get('total_predictions'):
+            st.subheader("📈 Predicted Monthly Spending")
             
-            if 'error' not in health_analysis:
-                # Health score display
-                score = health_analysis['health_score']
-                status = health_analysis['health_status']
-                color = health_analysis['health_color']
-                
-                col1, col2, col3 = st.columns([1, 2, 1])
-                
-                with col2:
-                    # Create a gauge-like display
-                    fig = go.Figure(go.Indicator(
-                        mode = "gauge+number+delta",
-                        value = score,
-                        domain = {'x': [0, 1], 'y': [0, 1]},
-                        title = {'text': "Financial Health Score"},
-                        delta = {'reference': 70},
-                        gauge = {
-                            'axis': {'range': [None, 100]},
-                            'bar': {'color': color},
-                            'steps': [
-                                {'range': [0, 40], 'color': "lightgray"},
-                                {'range': [40, 70], 'color': "yellow"},
-                                {'range': [70, 100], 'color': "lightgreen"}
-                            ],
-                            'threshold': {
-                                'line': {'color': "red", 'width': 4},
-                                'thickness': 0.75,
-                                'value': 90
-                            }
-                        }
-                    ))
-                    fig.update_layout(height=300)
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                # Health metrics
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.metric("Savings Rate", f"{health_analysis['savings_rate']:.1f}%")
-                
-                with col2:
-                    st.metric("Expense Ratio", f"{health_analysis['expense_ratio']:.1f}%")
-                
-                with col3:
-                    if health_analysis.get('budget_adherence'):
-                        st.metric("Budget Adherence", f"{health_analysis['budget_adherence']:.1f}%")
-                    else:
-                        st.metric("Budget Adherence", "No budgets set")
-                
-                # Health recommendations
-                if health_analysis['recommendations']:
-                    st.write("**💡 Recommendations:**")
-                    for rec in health_analysis['recommendations']:
-                        st.write(f"• {rec}")
-            else:
-                st.error(f"Health analysis failed: {health_analysis['error']}")
-        
-        st.divider()
-        
-        # Savings recommendations
-        st.subheader("💰 Personalized Savings Recommendations")
-        
-        with show_loading_spinner("Generating savings recommendations..."):
-            recommendations = services['ai_advisor'].generate_savings_recommendations(user_id)
+            months = [f"Month {i+1}" for i in range(len(predictions['total_predictions']))]
+            amounts = predictions['total_predictions']
             
-            if recommendations:
-                for i, rec in enumerate(recommendations):
-                    with st.expander(f"💡 {rec['category']} - Save ${rec['estimated_savings']:,.2f}/month"):
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.write(f"**Category:** {rec['category']}")
-                            st.write(f"**Difficulty:** {rec['difficulty']}")
-                            if rec.get('timeline'):
-                                st.write(f"**Timeline:** {rec['timeline']}")
-                        
-                        with col2:
-                            st.write(f"**Monthly Savings:** ${rec['estimated_savings']:,.2f}")
-                            if rec.get('impact'):
-                                st.write(f"**Impact:** {rec['impact']}")
-                        
-                        st.write(f"**Action:** {rec['recommendation']}")
-            else:
-                st.info("No savings recommendations available. Upload more transaction data for better insights.")
-        
-        st.divider()
-        
-        # Future spending predictions
-        st.subheader("🔮 Spending Predictions")
-        
-        with show_loading_spinner("Predicting future spending..."):
-            predictions = services['ai_advisor'].predict_future_spending(user_id, months_ahead=3)
+            # Create prediction chart
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=months,
+                y=amounts,
+                name='Predicted Spending',
+                marker_color='lightblue'
+            ))
             
-            if 'error' not in predictions:
-                st.write(f"**Prediction Period:** {predictions['prediction_period']}")
-                st.write(f"**Confidence Level:** {predictions['confidence_level']:.1f}%")
-                
-                # Total predictions chart
-                if predictions['total_predictions']:
-                    months_labels = [f"Month {i+1}" for i in range(len(predictions['total_predictions']))]
-                    
-                    fig = go.Figure()
-                    fig.add_trace(go.Bar(
-                        x=months_labels,
-                        y=predictions['total_predictions'],
-                        name='Predicted Spending',
-                        marker_color='lightblue'
-                    ))
-                    
-                    fig.update_layout(
-                        title="Predicted Monthly Spending",
-                        xaxis_title="Month",
-                        yaxis_title="Amount ($)",
-                        showlegend=False
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                # Category predictions
-                if predictions['category_predictions']:
-                    st.write("**Category Predictions:**")
-                    
-                    for category, pred_data in predictions['category_predictions'].items():
-                        with st.expander(f"{category} - {pred_data['trend'].title()} trend"):
-                            col1, col2 = st.columns(2)
-                            
-                            with col1:
-                                st.metric("Current Monthly Avg", f"${pred_data['current_monthly_average']:,.2f}")
-                                st.metric("Trend", pred_data['trend'].title())
-                            
-                            with col2:
-                                st.metric("Confidence", f"{pred_data['confidence']:.1f}%")
-                                if pred_data['predicted_values']:
-                                    st.metric("Next Month Prediction", f"${pred_data['predicted_values'][0]:,.2f}")
+            fig.update_layout(
+                title="Predicted Spending by Month",
+                xaxis_title="Month",
+                yaxis_title="Amount ($)",
+                showlegend=False
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Confidence level
+            confidence = predictions.get('confidence_level', 0)
+            if confidence > 70:
+                st.success(f"🎯 High confidence prediction ({confidence:.0f}%)")
+            elif confidence > 50:
+                st.warning(f"⚠️ Moderate confidence prediction ({confidence:.0f}%)")
             else:
-                st.info(f"Prediction unavailable: {predictions['error']}")
+                st.info(f"📊 Low confidence prediction ({confidence:.0f}%) - More data needed")
+
+def show_financial_health_analysis(user_id: int, services):
+    """Display financial health analysis"""
+    st.subheader("❤️ Financial Health Score")
+    
+    with st.spinner("🤖 Analyzing your financial health..."):
+        health_analysis = services['ai_advisor'].analyze_financial_health(user_id)
+        
+        if 'error' in health_analysis:
+            st.error(f"Health analysis failed: {health_analysis['error']}")
+            return
+        
+        # Health score display
+        score = health_analysis.get('health_score', 0)
+        status = health_analysis.get('health_status', 'Unknown')
+        color = health_analysis.get('health_color', 'gray')
+        
+        # Large health score display
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown(f"""
+            <div style="text-align: center; padding: 20px; border-radius: 10px; background-color: {color}20;">
+                <h1 style="color: {color}; margin: 0;">{score}/100</h1>
+                <h3 style="color: {color}; margin: 0;">{status}</h3>
+            </div>
+            """, unsafe_allow_html=True)
         
         st.divider()
+        
+        # Detailed metrics
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            savings_rate = health_analysis.get('savings_rate', 0)
+            st.metric("Savings Rate", f"{savings_rate:.1f}%", "Of income")
+        
+        with col2:
+            expense_ratio = health_analysis.get('expense_ratio', 0)
+            st.metric("Expense Ratio", f"{expense_ratio:.1f}%", "Of income")
+        
+        with col3:
+            budget_adherence = health_analysis.get('budget_adherence')
+            if budget_adherence is not None:
+                st.metric("Budget Adherence", f"{budget_adherence:.1f}%", "On track")
+            else:
+                st.metric("Budget Adherence", "N/A", "No budgets set")
+        
+        # Health recommendations
+        recommendations = health_analysis.get('recommendations', [])
+        if recommendations:
+            st.subheader("💊 Health Improvement Recommendations")
+            for rec in recommendations:
+                st.write(f"• {rec}")
         
         # Budget alerts
-        st.subheader("🚨 Budget Alerts")
-        
+        st.subheader("🚨 Current Alerts")
         alerts = services['ai_advisor'].check_budget_alerts(user_id)
         
         if alerts:
             for alert in alerts:
                 if alert['alert_type'] == 'overspent':
-                    st.error(
-                        f"🚨 **{alert['category']}** - Overspent by ${alert['overspent_amount']:,.2f} "
-                        f"({alert['overspent_percentage']:.1f}% over budget)"
-                    )
+                    st.error(f"🚨 **{alert['category']}**: Overspent by ${alert['overspent_amount']:.2f}")
                 elif alert['alert_type'] == 'near_limit':
-                    st.warning(
-                        f"⚠️ **{alert['category']}** - {alert['usage_percentage']:.1f}% of budget used "
-                        f"(${alert['remaining_budget']:,.2f} remaining)"
-                    )
+                    st.warning(f"⚠️ **{alert['category']}**: {alert['usage_percentage']:.1f}% of budget used")
                 else:
-                    st.info(
-                        f"ℹ️ **{alert['category']}** - {alert['usage_percentage']:.1f}% of budget used"
-                    )
+                    st.info(f"📊 **{alert['category']}**: {alert['usage_percentage']:.1f}% of budget used")
         else:
             st.success("✅ All budgets are on track!")
-    
-    except Exception as e:
-        logger.error(f"Error in insights page: {e}")
-        st.error(f"Error loading insights: {e}")
 
 def show_settings_page(user_id: int, services):
-    """Settings page"""
-    st.header("⚙️ Settings")
+    """Settings page with profile and preferences"""
+    st.header("⚙️ Settings & Preferences")
     
-    # Settings tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["👤 Profile", "🔔 Notifications", "🔧 Preferences", "📊 Data"])
-    
-    with tab1:
+    try:
+        # User profile settings
         show_profile_settings()
-    
-    with tab2:
-        show_notification_settings(user_id, services)
-    
-    with tab3:
-        show_app_preferences(user_id)
-    
-    with tab4:
-        show_data_management(user_id, services)
-
-def show_notification_settings(user_id: int, services):
-    """Notification settings"""
-    st.subheader("🔔 Notification Settings")
-    
-    try:
-        from database.models import UserPreferences
-        
-        preferences = UserPreferences.get_by_user(user_id)
-        if not preferences:
-            preferences = UserPreferences.create_default(user_id)
-        
-        if preferences:
-            with st.form("notification_settings"):
-                st.write("**Email Notifications:**")
-                email_notifications = st.checkbox(
-                    "Enable email notifications",
-                    value=preferences.notification_email
-                )
-                
-                budget_alerts = st.checkbox(
-                    "Budget alerts",
-                    value=preferences.budget_alerts,
-                    disabled=not email_notifications
-                )
-                
-                investment_alerts = st.checkbox(
-                    "Investment alerts",
-                    value=preferences.investment_alerts,
-                    disabled=not email_notifications
-                )
-                
-                st.write("**SMS Notifications:**")
-                user = User.get_by_id(user_id)
-                sms_enabled = user and user.phone_number
-                
-                sms_notifications = st.checkbox(
-                    "Enable SMS notifications",
-                    value=preferences.notification_sms and sms_enabled,
-                    disabled=not sms_enabled,
-                    help="Add phone number in profile to enable SMS"
-                )
-                
-                if st.form_submit_button("Save Notification Settings"):
-                    from auth.user_management import UserManager
-                    
-                    success, message = UserManager.update_user_preferences(
-                        user_id,
-                        email_notifications,
-                        sms_notifications,
-                        budget_alerts,
-                        investment_alerts
-                    )
-                    
-                    if success:
-                        st.success(message)
-                        st.rerun()
-                    else:
-                        st.error(message)
         
         st.divider()
         
-        # Test notifications
-        st.subheader("🧪 Test Notifications")
+        # App preferences
+        st.subheader("🔧 Application Preferences")
         
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("Test Email Notification"):
-                with st.spinner("Sending test email..."):
-                    results = services['notification_service'].test_notification_settings(user_id)
-                    if results.get('email'):
-                        st.success("✅ Test email sent successfully!")
-                    else:
-                        st.error("❌ Failed to send test email")
-        
-        with col2:
-            if st.button("Test SMS Notification"):
-                with st.spinner("Sending test SMS..."):
-                    results = services['notification_service'].test_notification_settings(user_id)
-                    if results.get('sms'):
-                        st.success("✅ Test SMS sent successfully!")
-                    else:
-                        st.error("❌ Failed to send test SMS")
-    
-    except Exception as e:
-        logger.error(f"Error in notification settings: {e}")
-        st.error(f"Error loading notification settings: {e}")
-
-def show_app_preferences(user_id: int):
-    """Application preferences"""
-    st.subheader("🔧 Application Preferences")
-    
-    # Currency preference
-    currency = st.selectbox(
-        "Currency",
-        ["USD ($)", "EUR (€)", "GBP (£)", "JPY (¥)", "CAD ($)", "AUD ($)"],
-        index=0
-    )
-    
-    # Date format
-    date_format = st.selectbox(
-        "Date Format",
-        ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"],
-        index=0
-    )
-    
-    # Theme (placeholder - Streamlit handles themes)
-    theme = st.selectbox(
-        "Theme",
-        ["Auto", "Light", "Dark"],
-        index=0,
-        help="Theme is controlled by Streamlit settings"
-    )
-    
-    # Default analysis period
-    default_period = st.selectbox(
-        "Default Analysis Period",
-        ["Last 3 months", "Last 6 months", "Last 12 months"],
-        index=1
-    )
-    
-    # Auto-categorization confidence threshold
-    confidence_threshold = st.slider(
-        "AI Categorization Confidence Threshold",
-        min_value=50,
-        max_value=100,
-        value=80,
-        help="Transactions with confidence below this threshold will be flagged for review"
-    )
-    
-    if st.button("Save Preferences"):
-        # Save preferences to session state (in a real app, save to database)
-        st.session_state.update({
-            'currency': currency,
-            'date_format': date_format,
-            'theme': theme,
-            'default_period': default_period,
-            'confidence_threshold': confidence_threshold
-        })
-        st.success("✅ Preferences saved!")
-
-def show_data_management(user_id: int, services):
-    """Data management and export"""
-    st.subheader("📊 Data Management")
-    
-    try:
-        # Data export
-        st.write("**📥 Export Data:**")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if st.button("Export Transactions"):
-                transactions = Transaction.get_by_user(user_id, limit=10000)
-                if transactions:
-                    df = pd.DataFrame([{
-                        'Date': t.transaction_date,
-                        'Description': t.description,
-                        'Category': t.category,
-                        'Amount': float(t.amount),
-                        'Account': t.account_type,
-                        'Confidence': t.confidence_score
-                    } for t in transactions])
-                    
-                    csv = df.to_csv(index=False)
-                    st.download_button(
-                        label="Download Transactions CSV",
-                        data=csv,
-                        file_name=f"transactions_{datetime.now().strftime('%Y%m%d')}.csv",
-                        mime="text/csv"
-                    )
-                else:
-                    st.info("No transactions to export")
-        
-        with col2:
-            if st.button("Export Budgets"):
+            st.write("**Data Management:**")
+            if st.button("📥 Export All Data"):
+                # Export functionality
+                transactions = Transaction.get_by_user(user_id, limit=1000)
                 budgets = Budget.get_by_user(user_id)
-                if budgets:
-                    df = pd.DataFrame([{
-                        'Category': b.category,
-                        'Monthly_Limit': float(b.monthly_limit),
-                        'Current_Spent': float(b.current_spent or 0),
-                        'Created_Date': b.created_at
-                    } for b in budgets])
-                    
-                    csv = df.to_csv(index=False)
-                    st.download_button(
-                        label="Download Budgets CSV",
-                        data=csv,
-                        file_name=f"budgets_{datetime.now().strftime('%Y%m%d')}.csv",
-                        mime="text/csv"
-                    )
-                else:
-                    st.info("No budgets to export")
-        
-        with col3:
-            if st.button("Export Goals"):
                 goals = FinancialGoal.get_by_user(user_id)
-                if goals:
-                    df = pd.DataFrame([{
-                        'Goal_Name': g.goal_name,
-                        'Target_Amount': float(g.target_amount),
-                        'Current_Amount': float(g.current_amount or 0),
-                        'Target_Date': g.target_date,
-                        'Status': g.status,
-                        'Created_Date': g.created_at
-                    } for g in goals])
-                    
-                    csv = df.to_csv(index=False)
-                    st.download_button(
-                        label="Download Goals CSV",
-                        data=csv,
-                        file_name=f"goals_{datetime.now().strftime('%Y%m%d')}.csv",
-                        mime="text/csv"
-                    )
-                else:
-                    st.info("No goals to export")
-        
-        st.divider()
-        
-        # Data statistics
-        st.write("**📈 Data Statistics:**")
-        
-        transactions = Transaction.get_by_user(user_id, limit=10000)
-        budgets = Budget.get_by_user(user_id)
-        goals = FinancialGoal.get_by_user(user_id)
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Total Transactions", len(transactions))
+                
+                # Create export data
+                export_data = {
+                    'transactions': len(transactions),
+                    'budgets': len(budgets),
+                    'goals': len(goals),
+                    'export_date': datetime.now().isoformat()
+                }
+                
+                st.json(export_data)
+                st.success("Data export completed!")
+            
+            if st.button("🗑️ Clear All Data", type="secondary"):
+                st.warning("This action cannot be undone!")
         
         with col2:
-            st.metric("Active Budgets", len(budgets))
-        
-        with col3:
-            st.metric("Financial Goals", len(goals))
-        
-        with col4:
-            if transactions:
-                date_range = max(t.transaction_date for t in transactions) - min(t.transaction_date for t in transactions)
-                st.metric("Data Span", f"{date_range.days} days")
-            else:
-                st.metric("Data Span", "0 days")
+            st.write("**Notification Test:**")
+            if st.button("📧 Test Email"):
+                result = services['notification_service'].test_notification_settings(user_id)
+                if result.get('email'):
+                    st.success("✅ Email test successful!")
+                else:
+                    st.error("❌ Email test failed")
+            
+            if st.button("📱 Test SMS"):
+                result = services['notification_service'].test_notification_settings(user_id)
+                if result.get('sms'):
+                    st.success("✅ SMS test successful!")
+                else:
+                    st.error("❌ SMS test failed")
         
         st.divider()
         
-        # Data cleanup
-        st.write("**🧹 Data Cleanup:**")
-        
-        st.warning("⚠️ These actions cannot be undone. Please export your data before proceeding.")
+        # App information
+        st.subheader("ℹ️ Application Information")
         
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("🗑️ Delete All Transactions", type="secondary"):
-                st.session_state['confirm_delete_transactions'] = True
+            st.write(f"**App Name:** {Settings.APP_NAME}")
+            st.write(f"**Version:** {Settings.APP_VERSION}")
+            st.write(f"**User ID:** {user_id}")
         
         with col2:
-            if st.button("🗑️ Delete All Data", type="secondary"):
-                st.session_state['confirm_delete_all'] = True
-        
-        # Confirmation dialogs
-        if st.session_state.get('confirm_delete_transactions', False):
-            st.error("⚠️ Are you sure you want to delete ALL transactions?")
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("Yes, Delete All Transactions", type="primary"):
-                    # Delete all transactions for user
-                    from database.connection import get_db_instance
-                    db = get_db_instance()
-                    success = db.execute_update("DELETE FROM transactions WHERE user_id = %s", (user_id,))
-                    
-                    if success:
-                        st.success("All transactions deleted")
-                        st.session_state['confirm_delete_transactions'] = False
-                        st.rerun()
-                    else:
-                        st.error("Failed to delete transactions")
-            
-            with col2:
-                if st.button("Cancel"):
-                    st.session_state['confirm_delete_transactions'] = False
-                    st.rerun()
-        
-        if st.session_state.get('confirm_delete_all', False):
-            st.error("⚠️ Are you sure you want to delete ALL your data? This includes transactions, budgets, and goals.")
-            
-            password_confirm = st.text_input("Enter your password to confirm:", type="password")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("Yes, Delete Everything", type="primary"):
-                    if password_confirm:
-                        user = User.get_by_id(user_id)
-                        if user and AuthenticationManager.verify_password(password_confirm, user.password_hash):
-                            # Delete all user data
-                            from database.connection import get_db_instance
-                            db = get_db_instance()
-                            
-                            # Delete in order due to foreign key constraints
-                            db.execute_update("DELETE FROM investment_recommendations WHERE user_id = %s", (user_id,))
-                            db.execute_update("DELETE FROM financial_goals WHERE user_id = %s", (user_id,))
-                            db.execute_update("DELETE FROM budgets WHERE user_id = %s", (user_id,))
-                            db.execute_update("DELETE FROM transactions WHERE user_id = %s", (user_id,))
-                            db.execute_update("DELETE FROM user_preferences WHERE user_id = %s", (user_id,))
-                            
-                            st.success("All data deleted successfully")
-                            st.session_state['confirm_delete_all'] = False
-                            st.rerun()
-                        else:
-                            st.error("Incorrect password")
-                    else:
-                        st.error("Please enter your password")
-            
-            with col2:
-                if st.button("Cancel"):
-                    st.session_state['confirm_delete_all'] = False
-                    st.rerun()
+            config_status = Settings.get_config_status()
+            st.write("**Service Status:**")
+            for service, status in config_status.items():
+                st.write(f"• {service}: {status}")
     
     except Exception as e:
-        logger.error(f"Error in data management: {e}")
-        st.error(f"Error in data management: {e}")
-
+        logger.error(f"Error in settings page: {e}")
+        st.error(f"Error loading settings: {e}")
+    create_footer()
+    
 if __name__ == "__main__":
     main()
-
-

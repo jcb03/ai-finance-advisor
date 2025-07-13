@@ -8,7 +8,7 @@ from typing import Optional
 from database.models import User, UserPreferences
 import re
 import logging
-
+from utils.helpers import create_footer
 logger = logging.getLogger(__name__)
 
 class AuthenticationManager:
@@ -286,3 +286,5 @@ def show_auth_page():
         "</div>", 
         unsafe_allow_html=True
     )
+
+    create_footer()
