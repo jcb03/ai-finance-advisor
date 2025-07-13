@@ -1,4 +1,4 @@
-# AI-Powered Personal Finance Advisor
+# Finance Cortex AI
 
 A comprehensive personal finance management application powered by AI for intelligent transaction categorization, budgeting insights, and investment recommendations.
 
@@ -262,3 +262,6 @@ For support and questions:
 ---
 
 **Built with ❤️ using Streamlit, PostgreSQL, and OpenAI GPT-4**
+## Created by Jai Chaudhary
+
+Finance Cortex AI © 2025

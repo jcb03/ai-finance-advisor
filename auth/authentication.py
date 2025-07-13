@@ -252,12 +252,12 @@ def show_auth_page():
     """Display authentication page"""
 
     # Header
-    st.title("🏦 AI-Powered Personal Finance Advisor")
+    st.title("🏦 Finance Cortex AI")
     st.markdown("---")
     
     # Description
     st.markdown("""
-    ### Welcome to Your Personal Finance Assistant
+    ### Welcome to Finance Cortex AI
     
     **Features:**
     - 🤖 AI-powered transaction categorization

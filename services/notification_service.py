@@ -123,7 +123,7 @@ Budget Details:
 Consider reviewing your spending in this category to get back on track.
 
 Best regards,
-AI Finance Advisor
+Finance Cortex AI
                 """.strip()
                 
                 html_message = f"""

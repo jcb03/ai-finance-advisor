@@ -3,7 +3,7 @@ import streamlit as st
 
 # Page configuration - MUST be first Streamlit command
 st.set_page_config(
-    page_title="AI Personal Finance Advisor",
+    page_title="Finance Cortex AI",
     page_icon="🏦",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -69,7 +69,7 @@ def main():
 
 def show_dashboard(services):
     """Main dashboard page"""
-    st.title("🏦 AI-Powered Personal Finance Advisor")
+    st.title("🏦 Finance Cortex AI")
     
     user_id = AuthenticationManager.get_current_user_id()
     user_name = st.session_state.get('user_name', 'User')
@@ -973,7 +973,7 @@ def show_investments_page(user_id: int, services):
 
 def show_insights_page(user_id: int, services):
     """AI Insights page with comprehensive financial analysis"""
-    st.header("🤖 AI-Powered Financial Insights")
+    st.header("🤖 Finance Cortex AI - Intelligent Insights")
     
     try:
         # Check if user has sufficient data

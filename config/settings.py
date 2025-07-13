@@ -122,7 +122,7 @@ class Settings:
     # =============================================================================
 
     # Application metadata
-    APP_NAME = "AI-Powered Personal Finance Advisor"
+    APP_NAME = "Finance Cortex AI"
     APP_VERSION = "1.0.0"
     APP_DESCRIPTION = "Intelligent personal finance management with AI-powered insights"
     APP_AUTHOR = "Finance AI Team"
