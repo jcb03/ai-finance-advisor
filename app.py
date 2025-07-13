@@ -848,10 +848,17 @@ def show_investments_page(user_id: int, services):
     st.header("📈 Investment Recommendations")
     
     try:
+        # Initialize session state keys BEFORE any widgets
+        if 'investment_recommendations' not in st.session_state:
+            st.session_state.investment_recommendations = None
+        
+        if 'investment_profile' not in st.session_state:
+            st.session_state.investment_profile = None
+        
         # Investment profile form
         st.subheader("📋 Investment Profile")
         
-        with st.form("investment_profile"):
+        with st.form("investment_profile_form"):
             col1, col2 = st.columns(2)
             
             with col1:
@@ -866,7 +873,11 @@ def show_investments_page(user_id: int, services):
             
             goals = st.text_area("Investment Goals", placeholder="e.g., Retirement, House down payment, Emergency fund")
             
-            if st.form_submit_button("🤖 Get AI Recommendations", type="primary"):
+            # Use callback function for form submission
+            submitted = st.form_submit_button("🤖 Get AI Recommendations", type="primary")
+            
+            if submitted:
+                # Create user profile
                 user_profile = {
                     'age': age,
                     'risk_tolerance': risk_tolerance,
@@ -877,10 +888,11 @@ def show_investments_page(user_id: int, services):
                     'goals': goals
                 }
                 
-                with show_loading_spinner("Generating personalized investment recommendations..."):
+                with st.spinner("Generating personalized investment recommendations..."):
                     recommendations = services['investment_service'].get_investment_recommendations(user_profile)
                     
                     if recommendations:
+                        # Store in session state using proper method
                         st.session_state['investment_recommendations'] = recommendations
                         st.session_state['investment_profile'] = user_profile
                         st.success("✅ Investment recommendations generated!")
@@ -890,8 +902,8 @@ def show_investments_page(user_id: int, services):
         
         st.divider()
         
-        # Display recommendations
-        if 'investment_recommendations' in st.session_state:
+        # Display recommendations if they exist
+        if st.session_state.get('investment_recommendations') and st.session_state.get('investment_profile'):
             recommendations = st.session_state['investment_recommendations']
             profile = st.session_state['investment_profile']
             
@@ -899,11 +911,37 @@ def show_investments_page(user_id: int, services):
             
             # Portfolio allocation chart
             if recommendations:
-                allocation_data = {rec.get('name', rec.get('symbol', 'Unknown')): rec.get('allocation_percentage', 0) for rec in recommendations}
+                allocation_data = {
+                    rec.get('name', rec.get('symbol', 'Unknown')): rec.get('allocation_percentage', 0) 
+                    for rec in recommendations
+                }
                 fig = ChartHelper.create_spending_pie_chart(allocation_data, "Recommended Portfolio Allocation")
                 st.plotly_chart(fig, use_container_width=True)
             
-            # Recommended asset allocation
+            # Display individual recommendations
+            st.subheader("📊 Investment Recommendations")
+            
+            for i, rec in enumerate(recommendations):
+                with st.expander(f"💼 {rec.get('name', 'Investment')} ({rec.get('symbol', 'N/A')})"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write(f"**Type:** {rec.get('type', 'N/A')}")
+                        st.write(f"**Allocation:** {rec.get('allocation_percentage', 0):.1f}%")
+                        st.write(f"**Risk Level:** {rec.get('risk_level', 'N/A')}")
+                    
+                    with col2:
+                        if rec.get('current_price'):
+                            st.write(f"**Current Price:** ${rec['current_price']:.2f}")
+                        if rec.get('expected_return'):
+                            st.write(f"**Expected Return:** {rec['expected_return']:.1f}%")
+                        if rec.get('time_horizon'):
+                            st.write(f"**Time Horizon:** {rec['time_horizon']}")
+                    
+                    if rec.get('reasoning'):
+                        st.write(f"**Reasoning:** {rec['reasoning']}")
+            
+            # Asset allocation strategy
             allocation = services['investment_service'].calculate_investment_allocation(
                 profile['amount'], 
                 profile['risk_tolerance'], 
@@ -917,107 +955,19 @@ def show_investments_page(user_id: int, services):
                 st.write("**Recommended Allocation:**")
                 st.write(f"• Stocks: {allocation['total_stocks']:.1f}%")
                 st.write(f"• Bonds: {allocation['total_bonds']:.1f}%")
-                
-                st.write("**Stock Breakdown:**")
-                for category, percentage in allocation['percentages'].items():
-                    if 'stock' in category or 'market' in category:
-                        st.write(f"• {category.replace('_', ' ').title()}: {percentage:.1f}%")
             
             with col2:
                 st.write("**Dollar Amounts:**")
                 for category, amount in allocation['amounts'].items():
-                    st.write(f"• {category.replace('_', ' ').title()}: ${amount:,.2f}")
-            
-            st.divider()
-            
-            # Individual recommendations
-            st.subheader("💡 Individual Recommendations")
-            
-            for i, rec in enumerate(recommendations):
-                with st.expander(f"{rec.get('name', rec.get('symbol', 'Unknown'))} - {rec.get('allocation_percentage', 0)}%"):
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write(f"**Symbol:** {rec.get('symbol', 'N/A')}")
-                        st.write(f"**Type:** {rec.get('type', 'N/A')}")
-                        st.write(f"**Risk Level:** {rec.get('risk_level', 'N/A')}")
-                        st.write(f"**Time Horizon:** {rec.get('time_horizon', 'N/A')}")
-                        
-                        # Real-time price if available
-                        if rec.get('current_price'):
-                            change_color = "🟢" if rec.get('daily_change', 0) >= 0 else "🔴"
-                            st.write(f"**Current Price:** ${rec['current_price']:.2f} {change_color}")
-                    
-                    with col2:
-                        st.write(f"**Allocation:** {rec.get('allocation_percentage', 0)}%")
-                        amount = profile['amount'] * (rec.get('allocation_percentage', 0) / 100)
-                        st.write(f"**Investment Amount:** ${amount:,.2f}")
-                        
-                        if rec.get('expected_return'):
-                            st.write(f"**Expected Return:** {rec['expected_return']}%")
-                    
-                    st.write(f"**Reasoning:** {rec.get('reasoning', 'No reasoning provided')}")
+                    st.write(f"• {category.replace('_', ' ').title()}: ${amount:,.0f}")
         
-        st.divider()
-        
-        # Stock lookup tool
-        st.subheader("🔍 Stock Lookup")
-        
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            symbol = st.text_input("Enter stock symbol (e.g., AAPL, GOOGL, TSLA)", placeholder="AAPL")
-        
-        with col2:
-            st.write("")  # Spacing
-            lookup_button = st.button("Get Stock Data", type="secondary")
-        
-        if lookup_button and symbol:
-            with show_loading_spinner(f"Fetching data for {symbol.upper()}..."):
-                stock_data = services['investment_service'].get_stock_data(symbol.upper())
-                
-                if stock_data:
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.metric("Symbol", stock_data['symbol'])
-                    with col2:
-                        st.metric(
-                            "Price", 
-                            f"${stock_data['price']:.2f}",
-                            delta=f"{stock_data['change_percent']:.2f}%"
-                        )
-                    with col3:
-                        st.metric("Volume", f"{stock_data['volume']:,}")
-                    with col4:
-                        st.metric("High/Low", f"${stock_data['high']:.2f} / ${stock_data['low']:.2f}")
-                else:
-                    st.error(f"❌ Could not fetch data for {symbol.upper()}")
-        
-        # Market overview
-        st.subheader("📊 Market Overview")
-        
-        with show_loading_spinner("Loading market data..."):
-            market_data = services['investment_service'].get_market_overview()
-            
-            if market_data:
-                cols = st.columns(len(market_data))
-                
-                for i, (index, data) in enumerate(market_data.items()):
-                    with cols[i]:
-                        change_color = "normal" if data['change_percent'] >= 0 else "inverse"
-                        st.metric(
-                            index,
-                            f"${data['price']:.2f}",
-                            delta=f"{data['change_percent']:.2f}%",
-                            delta_color=change_color
-                        )
-            else:
-                st.info("Market data unavailable")
+        else:
+            st.info("📝 Fill out the investment profile form above to get personalized AI-powered investment recommendations.")
     
     except Exception as e:
         logger.error(f"Error in investments page: {e}")
         st.error(f"Error loading investments: {e}")
+
 
 def show_insights_page(user_id: int, services):
     """AI insights page"""
